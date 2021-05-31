@@ -19,11 +19,10 @@ class User(mysql_db.Model):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __init__(self, from_dict):
-        self.username = from_dict['username']
-        self.password = from_dict['password']
-        self.birthday = from_dict['birthday']
-        self.fullname = from_dict['fullname']
-        self.datecreate = from_dict['datecreate']
+        if from_dict['_id']:
+            del from_dict['_id']
+        for key in from_dict:
+            setattr(self, key, from_dict.get(key))
 
 
 if __name__ == '__main__':

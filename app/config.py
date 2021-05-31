@@ -2,7 +2,7 @@ import os
 
 
 class Config(object):
-    RUN_IN_DOCKER = True
+    RUN_IN_DOCKER = False
     DEBUG = True
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'pham-tien-manh'
     APP_PORT = os.environ.get('APP_PORT') or 5000
