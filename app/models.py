@@ -19,8 +19,6 @@ class User(mysql_db.Model):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __init__(self, from_dict):
-        if from_dict['_id']:
-            del from_dict['_id']
         for key in from_dict:
             setattr(self, key, from_dict.get(key))
 

@@ -14,11 +14,12 @@ def insert_data(topic_name, table_name):
     my_col = mongo.db[table_name]
     for msg in consumer:
         req_data = msg.value
-        data = loads(req_data)
-        new_id = my_col.insert_one(data).inserted_id
+        data1 = loads(req_data)
+        data2 = loads(req_data)
+        new_id = my_col.insert_one(data1).inserted_id
         new_data = my_col.find_one({'_id': new_id})
 
-        user = models.User(from_dict=data)
+        user = models.User(from_dict=data2)
         session.add(user)
         session.commit()
         new_user = models.User.query.filter_by(username=user.username).first()
