@@ -1,0 +1,93 @@
+version: '3.9'
+services:
+  es1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELK_VERSION}
+    container_name: es1
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms128m -Xmx128m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+    networks:
+      - my-network
+    volumes:
+      - ./data/elasticsearch/es1:/usr/share/elasticsearch/data
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${ELK_VERSION}
+    container_name: kibana
+    restart: always
+    environment:
+      ELASTICSEARCH_HOSTS: http://es1:9200
+    ports:
+      - 5601:5601
+    networks:
+      - my-network
+    depends_on:
+      - es1
+#  logstash:
+#    image: docker.elastic.co/logstash/logstash:${ELK_VERSION}
+#    container_name: logstash
+#    restart: always
+#    environment:
+#      - "LS_JAVA_OPTS=-Xmx128m -Xms128m"
+#      - xpack.monitoring.elasticsearch.hosts=["http://es1:9200"]
+#      - xpack.monitoring.enabled=true
+#    ports:
+#      - 5044:5044
+#      - 9600:9600
+#    networks:
+#      - my-network
+#    volumes:
+#      - ./data/logstash/pipline:/usr/share/logstash/pipeline
+#    depends_on:
+#      - es1
+  monstache:
+    image: rwynn/monstache
+    container_name: monstache
+    restart: always
+    working_dir: /app
+    command: -f ./monstache.config.toml
+    ports:
+      - 8086:8086
+    networks:
+      - my-network
+    volumes:
+      - ./data/monstache/monstache.config.toml:/app/monstache.config.toml
+    depends_on:
+      - mongodb
+      - es1
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    hostname: mongodb
+    restart: always
+    ports:
+      - 27017:27017
+    networks:
+      - my-network
+    volumes:
+      - ./data/mongodb:/data/db
+      - ./data/mongodb/scripts:/scripts
+    command: ["/scripts/setup.sh"]
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+    networks:
+      - my-network
+    depends_on:
+      - mongodb
+networks:
+  my-network:
+    driver: bridge
+    name: my-network
