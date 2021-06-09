@@ -2,24 +2,43 @@ from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
-from json import dumps
+from json import dumps, loads
 import datetime
 import time
 import kafka_producer
+from elasticsearch import Elasticsearch
+import redis
+import pymongo
+from bson import Timestamp
 
 my_flask = Flask(__name__)
 my_flask.config.from_object(Config)
 mongo = PyMongo(my_flask)
 mysql_db = SQLAlchemy(my_flask)
 session = mysql_db.session()
+es = Elasticsearch([{'host': Config.ES_HOST, 'port': Config.ES_PORT}])
+rds = redis.from_url(Config.REDIS_URL)
+client = pymongo.MongoClient(Config.MONGO_URI)
 
 import models
 
 
+def myconverter(obj):
+    if isinstance(obj, datetime.date):
+        return obj.__str__()
+    elif isinstance(obj, datetime.datetime):
+        return obj.__str__()
+    elif isinstance(obj, Timestamp):
+        return obj.as_datetime().__str__()
+
+
 @my_flask.route('/')
 def app_info():
-    info = {'Brokers connected': kafka_producer.check, 'MongoDB': str(mongo.db), 'MySQL': str(mysql_db.engine)}
-    return jsonify({'My API Flask + Kafka + MongoDB + MySQL': info})
+    info = {'Kafka connected': kafka_producer.check,
+            'MongoDB': loads(dumps(client.admin.command('replSetGetStatus'), default=myconverter)),
+            'MySQL': str(mysql_db.engine.execute("SELECT VERSION()").fetchall()), 'Elasticsearch': es.cluster.health(),
+            'Redis': rds.client_list()}
+    return jsonify({'My Flask API': info})
 
 
 @my_flask.route('/user', methods=['GET'])
@@ -83,8 +102,6 @@ def delete_user(database):
     response = ''
     if database == 'mongo':
         my_col = mongo.db.user
-        # rm_data = my_col.delete_one(req_data)
-        # response = 'deleted {} on MongoDB'.format(rm_data.deleted_count)
         rm_data = my_col.find_one_and_delete(req_data)
         if rm_data:
             rm_data['_id'] = str(rm_data['_id'])

@@ -19,6 +19,11 @@ services:
       KAFKA_HOSTNAME1: kafka1:9092
       KAFKA_HOSTNAME2: kafka2:9093
       KAFKA_HOSTNAME3: kafka3:9094
+      ES_HOST: es1
+      ES_PORT: 9200
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
     volumes:
       - ./app:/app
       - /etc/timezone:/etc/timezone:ro

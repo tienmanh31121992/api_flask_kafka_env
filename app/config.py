@@ -23,3 +23,10 @@ class Config(object):
                    os.environ.get('KAFKA_HOSTNAME3')]
     else:
         BROKERS = ['localhost:' + str(i) for i in range(9092, 9095)]
+
+    ES_HOST = os.environ.get('ES_HOST') or 'localhost'
+    ES_PORT = os.environ.get('ES_PORT') or 9200
+    REDIS_HOST = os.environ.get('REDIS_HOST') or 'localhost'
+    REDIS_PORT = os.environ.get('REDIS_PORT') or 6379
+    REDIS_DB = os.environ.get('REDIS_DB') or 0
+    REDIS_URL = "redis://{}:{}/{}".format(REDIS_HOST, REDIS_PORT, REDIS_DB)
