@@ -58,7 +58,7 @@ services:
     networks:
       - my-network
     volumes:
-      - ./data/monstache/monstache.config.toml:/app/monstache.config.toml
+      - ./data/monstache/conf/monstache.config.toml:/app/monstache.config.toml
     depends_on:
       - mongodb
       - es1
@@ -72,7 +72,7 @@ services:
     networks:
       - my-network
     volumes:
-      - ./data/mongodb:/data/db
+      - ./data/mongodb/data:/data/db
       - ./data/mongodb/scripts:/scripts
     command: ["/scripts/setup.sh"]
   mongo-express:
