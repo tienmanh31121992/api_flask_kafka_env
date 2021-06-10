@@ -23,17 +23,6 @@ services:
       - my-network
     depends_on:
       - mysql
-  redis:
-    image: redis
-    container_name: redis
-    restart: always
-    ports:
-      - 6379:6379
-    networks:
-      - my-network
-    volumes:
-      - ./data/redis/data:/data
-      - ./data/redis/conf:/usr/local/etc/redis
 networks:
   my-network:
     driver: bridge

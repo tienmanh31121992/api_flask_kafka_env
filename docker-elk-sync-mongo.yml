@@ -83,10 +83,22 @@ services:
       - 8081:8081
     environment:
       ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_PORT: 27017
     networks:
       - my-network
     depends_on:
       - mongodb
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      - my-network
+    volumes:
+      - ./data/redis/data:/data
+      - ./data/redis/conf:/usr/local/etc/redis
 networks:
   my-network:
     driver: bridge

@@ -5,7 +5,7 @@ from config import Config
 from json import dumps, loads
 import datetime
 import time
-import kafka_producer
+# import kafka_producer
 from elasticsearch import Elasticsearch
 import redis
 import pymongo
@@ -17,7 +17,7 @@ mongo = PyMongo(my_flask)
 mysql_db = SQLAlchemy(my_flask)
 session = mysql_db.session()
 es = Elasticsearch([{'host': Config.ES_HOST, 'port': Config.ES_PORT}])
-rds = redis.from_url(Config.REDIS_URL)
+rds = redis.StrictRedis.from_url(Config.REDIS_URL)
 client = pymongo.MongoClient(Config.MONGO_URI)
 
 import models
@@ -34,7 +34,7 @@ def myconverter(obj):
 
 @my_flask.route('/')
 def app_info():
-    info = {'Kafka connected': kafka_producer.check,
+    info = {''''Kafka connected': kafka_producer.check,'''
             'MongoDB': loads(dumps(client.admin.command('replSetGetStatus'), default=myconverter)),
             'MySQL': str(mysql_db.engine.execute("SELECT VERSION()").fetchall()), 'Elasticsearch': es.cluster.health(),
             'Redis': rds.client_list()}
@@ -61,7 +61,7 @@ def add_user():
     req_data = request.get_json()
     req_data['datecreate'] = datetime.datetime.now().strftime("%m-%d-%Y %H:%M:%S")
     req_data['username'] = req_data['username'] + str(time.time())[-6:]
-    kafka_producer.send_data('Test', dumps(req_data))
+    # kafka_producer.send_data('Test', dumps(req_data))
     return jsonify({'INSERTED_USER': req_data})
 
 
@@ -90,10 +90,22 @@ def update_user(database):
     return jsonify({'UPDATED_USER': response})
 
 
-@my_flask.route('/<database>/user', methods=['GET'])
-def find_user(database):
+@my_flask.route('/search/<index>', methods=['GET'])
+def search_data(index):
     req_data = request.get_json()
-    return jsonify({'result': req_data})
+    rdskey = ''
+    for k in req_data.keys():
+        rdskey = str(k) + '-' + str(req_data.get(k))
+    value = rds.get(rdskey)
+    if value:
+        req = {'server': 'redis', 'key': rdskey}
+        res = loads(value.decode('utf-8'))
+    else:
+        body = {'query': {'wildcard': req_data}}
+        req = {'index': index, 'body': body}
+        res = es.search(index=index, body=body)
+        rds.setex(rdskey, 60, dumps(res['hits']['hits']).encode('utf-8'))
+    return jsonify({'result': {'request': req, 'response': res}})
 
 
 @my_flask.route('/<database>/user', methods=['DELETE'])

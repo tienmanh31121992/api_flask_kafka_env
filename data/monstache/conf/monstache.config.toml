@@ -1,7 +1,7 @@
 mongo-url = "mongodb://mongodb:27017"
 elasticsearch-urls = ["http://es1:9200"]
-direct-read-namespaces = ["kafka.user"]
-change-stream-namespaces = ["kafka.user"]
+direct-read-namespaces = ["kafka.user","demo.test"]
+change-stream-namespaces = ["kafka.user","demo.test"]
 elasticsearch-max-seconds = 5
 elasticsearch-max-conns = 3
 verbose = true
