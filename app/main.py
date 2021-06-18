@@ -9,10 +9,8 @@ import redis
 import pymongo
 import datetime
 import time
-import kafka_producer
 
-
-
+# import kafka_producer
 
 my_flask = Flask(__name__)
 my_flask.config.from_object(Config)
@@ -38,7 +36,7 @@ def myconverter(obj):
 @my_flask.route('/')
 def app_info():
     try:
-        info = {'Kafka connected': kafka_producer.check,
+        info = {"""'Kafka Cluster Connected': kafka_producer.check,"""
                 'MySQL': str(mysql_db.engine.execute("SELECT VERSION()").fetchall()),
                 'MongoDB': loads(dumps(client.admin.command('replSetGetStatus'), default=myconverter)),
                 'Elasticsearch': es.cluster.health(),
@@ -68,7 +66,7 @@ def add_user():
     req_data = request.get_json()
     req_data['datecreate'] = datetime.datetime.now().strftime("%m-%d-%Y %H:%M:%S")
     req_data['username'] = req_data['username'] + str(time.time())[-6:]
-    kafka_producer.send_data('Test', dumps(req_data))
+    # kafka_producer.send_data('Test', dumps(req_data))
     return jsonify({'INSERTED_USER': req_data})
 
 
@@ -108,9 +106,20 @@ def search_data(index):
     else:
         req = {'index': index, 'body': req_data}
         res = es.search(index=index,
-                        # scroll='2m',
-                        # size=1000,
+                        scroll='1m',
+                        size=1000,
                         body=req_data)
+        page = res #es.search(index=index, scroll='1m', size=1000, body=req_data)
+        i = 1
+        while len(page['hits']['hits']) > 0:
+            scroll_id = page['_scroll_id']
+            print('Scrolling...........................')
+            mes = 'scroll_id [{}]: {}'.format(i, scroll_id)
+            print(mes)
+            print(page['hits']['hits'][0]['_id'])
+            page = es.scroll(scroll_id=scroll_id, scroll='1m')
+            i = i + 1
+
         rds.setex(rdskey, 60, dumps(res).encode('utf-8'))
     return jsonify({'result': {'request': req, 'response': res}})
 
